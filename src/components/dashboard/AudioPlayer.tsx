@@ -14,11 +14,34 @@ function formatTime(seconds: number) {
   return `${String(Math.floor(safeSeconds / 60)).padStart(2, "0")}:${String(safeSeconds % 60).padStart(2, "0")}`;
 }
 
-const waveform = [
-  8, 13, 19, 24, 13, 28, 17, 31, 22, 35, 16, 27, 38, 21, 14, 31, 42, 19, 24, 34,
-  48, 21, 30, 39, 52, 26, 43, 61, 33, 47, 68, 39, 58, 73, 42, 31, 52, 38, 29, 45,
-  34, 25, 38, 31, 22, 34, 27, 18, 30, 24, 16, 27, 21, 15, 23, 18, 13, 20, 16, 12,
-];
+const WAVEFORM_BARS = 112;
+
+// Deterministic placeholder shown until the real audio is decoded (and as a
+// fallback when decoding is unavailable, e.g. speech-synthesis mode).
+const placeholderWaveform = Array.from({ length: WAVEFORM_BARS }, (_, index) => {
+  const envelope = 34 + 26 * Math.sin(index / 7.3) + 14 * Math.sin(index / 3.1);
+  const texture = 11 * Math.sin(index * 2.17) + 6 * Math.sin(index * 5.03);
+  return Math.round(Math.min(88, Math.max(8, envelope + texture)));
+});
+
+function computeWaveform(buffer: AudioBuffer, bars: number) {
+  const channel = buffer.getChannelData(0);
+  const samplesPerBar = Math.max(1, Math.floor(channel.length / bars));
+  const peaks = new Array<number>(bars).fill(0);
+
+  for (let bar = 0; bar < bars; bar += 1) {
+    const start = bar * samplesPerBar;
+    const end = Math.min(channel.length, start + samplesPerBar);
+    let sum = 0;
+    for (let i = start; i < end; i += 1) {
+      sum += channel[i] * channel[i];
+    }
+    peaks[bar] = Math.sqrt(sum / Math.max(1, end - start));
+  }
+
+  const max = Math.max(...peaks, 1e-6);
+  return peaks.map((peak) => Math.round(8 + (peak / max) * 80));
+}
 
 export function AudioPlayer({ broadcast }: { broadcast: Broadcast }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -28,13 +51,42 @@ export function AudioPlayer({ broadcast }: { broadcast: Broadcast }) {
   const [duration, setDuration] = useState(broadcast.durationSeconds || 0);
   const [fallbackMode, setFallbackMode] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [waveform, setWaveform] = useState<number[]>(placeholderWaveform);
   const audioUrl = broadcast.audioUrl ?? "/api/audio/latest";
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   const waveformBars = useMemo(
     () => waveform.map((height, index) => ({ height, played: index / waveform.length <= progress })),
-    [progress],
+    [progress, waveform],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("AudioContext" in window)) return;
+
+    const controller = new AbortController();
+    let audioContext: AudioContext | undefined;
+
+    (async () => {
+      try {
+        const response = await fetch(audioUrl, { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.arrayBuffer();
+        audioContext = new AudioContext();
+        const decoded = await audioContext.decodeAudioData(data);
+        if (controller.signal.aborted) return;
+        setWaveform(computeWaveform(decoded, WAVEFORM_BARS));
+        if (Number.isFinite(decoded.duration) && decoded.duration > 0) {
+          setDuration((current) => current || decoded.duration);
+        }
+      } catch {
+        // Keep the placeholder waveform when the audio cannot be decoded.
+      } finally {
+        void audioContext?.close();
+      }
+    })();
+
+    return () => controller.abort();
+  }, [audioUrl]);
 
   useEffect(() => {
     return () => {

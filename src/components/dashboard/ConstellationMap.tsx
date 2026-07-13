@@ -94,10 +94,15 @@ export function ConstellationMap({
     [archetypeStats, entries],
   );
 
-  const selectedSpec = selectedEntry ? clusterSpecs[selectedEntry.archetype] : undefined;
-  const selectedPoint = selectedEntry && selectedSpec
-    ? selectedEntry.constellation ?? { x: selectedSpec.x, y: selectedSpec.y }
-    : undefined;
+  const selectedPoint = useMemo(() => {
+    if (!selectedEntry) return undefined;
+    if (selectedEntry.constellation) return selectedEntry.constellation;
+    const cluster = mappedClusters.find((candidate) => candidate.label === selectedEntry.archetype);
+    if (!cluster) return undefined;
+    const index = cluster.entries.findIndex((entry) => entry.id === selectedEntry.id);
+    if (index < 0) return undefined;
+    return cluster.points[index % cluster.points.length];
+  }, [mappedClusters, selectedEntry]);
 
   return (
     <div className="constellation-shell">
@@ -240,20 +245,25 @@ export function ConstellationMap({
           })}
 
           {selectedPoint ? (
-            <g aria-hidden="true">
-              <path
-                d={`M ${selectedPoint.x + 12} ${selectedPoint.y} L 584 ${selectedPoint.y + 36} L 618 ${selectedPoint.y + 36}`}
+            <g aria-hidden="true" className="selection-halo">
+              <circle
+                cx={selectedPoint.x}
+                cy={selectedPoint.y}
+                r="17"
                 fill="none"
                 stroke="#ff6047"
                 strokeWidth="1.5"
+                opacity=".85"
               />
-              <line
-                x1="618"
-                y1={selectedPoint.y + 28}
-                x2="618"
-                y2={selectedPoint.y + 44}
+              <circle
+                cx={selectedPoint.x}
+                cy={selectedPoint.y}
+                r="24"
+                fill="none"
                 stroke="#ff6047"
-                strokeWidth="1.5"
+                strokeWidth="1"
+                strokeDasharray="3 5"
+                opacity=".45"
               />
             </g>
           ) : null}

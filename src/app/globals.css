@@ -292,6 +292,22 @@ a {
   transform: scale(1.18);
 }
 
+.selection-halo circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: halo-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes halo-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+
 .constellation-legend {
   position: absolute;
   left: 2px;
@@ -785,7 +801,6 @@ a {
   width: 2px;
   min-height: 5px;
   flex: 1 1 2px;
-  max-width: 4px;
   background: #52616a;
 }
 
@@ -925,6 +940,14 @@ a {
 
   .site-header {
     width: calc(100% - 48px);
+  }
+}
+
+@media (max-width: 1000px) {
+  /* The waveform column gets tight below 1000px; halve the bar density so
+     each bar keeps a visible width. */
+  .wave-bars i:nth-child(even) {
+    display: none;
   }
 }
 
@@ -1345,7 +1368,13 @@ a {
 
   .wave-bars {
     height: 43px;
-    gap: 1px;
+    gap: 0;
+  }
+
+  /* Roughly 40px remain for the waveform here; keep every fourth bar so the
+     remaining ones stay wide enough to paint. */
+  .wave-bars i:not(:nth-child(4n + 1)) {
+    display: none;
   }
 
   .broadcast-waveform input {
