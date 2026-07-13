@@ -212,7 +212,7 @@ In the app you can:
 
 ## Demo
 
-**Live app:** [ADD VERCEL URL]
+**Live app:** https://dev-community-challange.vercel.app
 
 **Video or GIF:** [ADD SHORT DEMO]
 

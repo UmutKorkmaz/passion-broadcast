@@ -1,0 +1,67 @@
+name: Refresh Passion Broadcast
+
+on:
+  schedule:
+    # Hourly checks during the remaining submission window, then one final
+    # capture after the July 13, 2026 06:59 UTC deadline.
+    - cron: "17 5-6 13 7 *"
+    - cron: "10 7 13 7 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passion-broadcast-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Validate challenge schedule
+        id: window
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ "$EVENT_NAME" == "schedule" && "$(date -u +%Y)" != "2026" ]]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "This scheduled refresh is limited to the 2026 challenge window."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refresh entries and broadcast
+        if: steps.window.outputs.run == 'true'
+        env:
+          INGEST_SECRET: ${{ secrets.PASSION_INGEST_SECRET }}
+        run: |
+          if [[ -z "$INGEST_SECRET" ]]; then
+            echo "PASSION_INGEST_SECRET is not configured." >&2
+            exit 1
+          fi
+
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 15 \
+            --max-time 330 \
+            --header "Authorization: Bearer $INGEST_SECRET" \
+            --output /tmp/passion-ingest.json \
+            https://dev-community-challange.vercel.app/api/admin/ingest
+
+          jq '{runId, status, sourceCount, qualifyingCount, changedCount, analyzedCount, failedAnalysisCount, broadcastGenerated, audioGenerated}' /tmp/passion-ingest.json
+
+          if ! jq -e '.status == "SUCCESS" or .status == "PARTIAL"' /tmp/passion-ingest.json >/dev/null; then
+            echo "Ingestion did not complete successfully." >&2
+            exit 1
+          fi
+
+          if jq -e '.changedCount > 0 and (.broadcastGenerated != true or .audioGenerated != true)' /tmp/passion-ingest.json >/dev/null; then
+            echo "New content was found, but its narrated broadcast was not completed." >&2
+            exit 1
+          fi

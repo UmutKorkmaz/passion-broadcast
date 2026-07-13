@@ -6,11 +6,11 @@ Passion Broadcast is a live, source-backed view of the projects and motivations 
 
 It is an observatory, not a leaderboard. Every entry links back to its public DEV post, and the app does not score projects or predict winners.
 
-- Live demo: **[add Vercel URL after deployment]**
+- Live demo: [dev-community-challange.vercel.app](https://dev-community-challange.vercel.app)
 - DEV submission: **[add published post URL]**
 - Source: [github.com/UmutKorkmaz/passion-broadcast](https://github.com/UmutKorkmaz/passion-broadcast)
 
-**Status:** active challenge build. The live deployment and measured results remain unclaimed until the release checks pass.
+**Status:** production deployment is live. The final challenge snapshot is refreshed from the public DEV dataset before the submission window closes.
 
 ## What it does
 
@@ -116,6 +116,12 @@ npm run build
 4. Deploy only after the test, typecheck, lint, and production-build gates pass.
 5. Run ingestion from a trusted environment, then verify the dashboard timestamp, source links, and latest audio response on the deployed app.
 6. Replace the live-demo placeholder above and in the DEV submission draft.
+
+## Automated challenge refresh
+
+`.github/workflows/refresh-passion-broadcast.yml` calls the protected production ingestion route during the final challenge hours and once after the deadline. Each run checks the public DEV dataset and records a Snowflake snapshot. Gemini and ElevenLabs are invoked only when a qualifying post is new or edited; unchanged runs do not generate another broadcast. The workflow can also be started manually from GitHub Actions.
+
+The workflow authenticates with the repository secret `PASSION_INGEST_SECRET`, which must match the production `CRON_SECRET`. Scheduled runs are intentionally limited to the 2026 challenge window so the judged dataset freezes after the final capture.
 
 ## Privacy and limitations
 

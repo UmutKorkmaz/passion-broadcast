@@ -41,6 +41,7 @@ async function handle(request: Request) {
       analyzedCount: result.analyzedCount,
       failedAnalysisCount: result.failedAnalysisCount,
       broadcastGenerated: result.broadcastGenerated,
+      audioGenerated: result.audioGenerated,
     });
   } catch {
     return Response.json(

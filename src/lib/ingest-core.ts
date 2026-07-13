@@ -36,6 +36,7 @@ export type IngestionResult = {
   analyzedCount: number;
   failedAnalysisCount: number;
   broadcastGenerated: boolean;
+  audioGenerated: boolean;
   snapshot: DashboardSnapshot;
 };
 
@@ -399,6 +400,7 @@ export async function runIngestion(): Promise<IngestionResult> {
     let snapshot = await getDashboardSnapshot();
     const snapshotId = await saveMetricSnapshot(snapshot);
     let broadcastGenerated = false;
+    let audioGenerated = false;
     let broadcastError: string | null = null;
     if (changedEntries.length > 0 || !(await hasBroadcast())) {
       try {
@@ -406,6 +408,7 @@ export async function runIngestion(): Promise<IngestionResult> {
         let audio: Uint8Array | null = null;
         try {
           audio = await synthesizeBroadcast(broadcast.script);
+          audioGenerated = true;
         } catch (error) {
           broadcastError = `Audio: ${sanitizeError(error)}`;
         }
@@ -455,6 +458,7 @@ export async function runIngestion(): Promise<IngestionResult> {
       analyzedCount: successfulAnalyses.length,
       failedAnalysisCount: analysisErrors.length,
       broadcastGenerated,
+      audioGenerated,
       snapshot,
     };
   } catch (error) {
