@@ -36,6 +36,7 @@ export type Broadcast = {
   transcript: string;
   durationSeconds: number;
   audioUrl?: string;
+  generatedAt?: string;
 };
 
 export type DashboardData = {

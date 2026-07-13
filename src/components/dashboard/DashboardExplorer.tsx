@@ -142,7 +142,10 @@ export function DashboardExplorer({ initialData }: DashboardExplorerProps) {
         />
       </main>
 
-      <AudioPlayer broadcast={data.broadcast} />
+      <AudioPlayer
+        key={data.broadcast.generatedAt ?? data.broadcast.audioUrl ?? data.broadcast.transcript}
+        broadcast={data.broadcast}
+      />
     </div>
   );
 }

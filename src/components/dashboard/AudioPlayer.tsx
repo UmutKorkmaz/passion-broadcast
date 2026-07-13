@@ -44,15 +44,15 @@ function computeWaveform(buffer: AudioBuffer, bars: number) {
 }
 
 export function AudioPlayer({ broadcast }: { broadcast: Broadcast }) {
+  const audioUrl = broadcast.audioUrl;
   const audioRef = useRef<HTMLAudioElement>(null);
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(broadcast.durationSeconds || 0);
-  const [fallbackMode, setFallbackMode] = useState(false);
+  const [fallbackMode, setFallbackMode] = useState(!audioUrl);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [waveform, setWaveform] = useState<number[]>(placeholderWaveform);
-  const audioUrl = broadcast.audioUrl ?? "/api/audio/latest";
   const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   const waveformBars = useMemo(
@@ -61,7 +61,7 @@ export function AudioPlayer({ broadcast }: { broadcast: Broadcast }) {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined" || !("AudioContext" in window)) return;
+    if (!audioUrl || typeof window === "undefined" || !("AudioContext" in window)) return;
 
     const controller = new AbortController();
     let audioContext: AudioContext | undefined;
@@ -166,18 +166,20 @@ export function AudioPlayer({ broadcast }: { broadcast: Broadcast }) {
 
   return (
     <aside className="broadcast-player" aria-label={`${broadcast.title} audio player`}>
-      <audio
-        ref={audioRef}
-        src={audioUrl}
-        preload="none"
-        onLoadedMetadata={(event) => {
-          const nextDuration = event.currentTarget.duration;
-          if (Number.isFinite(nextDuration)) setDuration(nextDuration);
-        }}
-        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-        onEnded={() => setIsPlaying(false)}
-        onError={() => setFallbackMode(true)}
-      />
+      {audioUrl ? (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          preload="none"
+          onLoadedMetadata={(event) => {
+            const nextDuration = event.currentTarget.duration;
+            if (Number.isFinite(nextDuration)) setDuration(nextDuration);
+          }}
+          onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+          onEnded={() => setIsPlaying(false)}
+          onError={() => setFallbackMode(true)}
+        />
+      ) : null}
 
       <div className="broadcast-mark" aria-hidden="true">
         <BrandMark />

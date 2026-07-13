@@ -38,6 +38,7 @@ type EnrichedEntryRow = {
 };
 
 type BroadcastRow = {
+  BROADCAST_ID: string;
   SCRIPT: string;
   DURATION_SECONDS: number | null;
   GENERATED_AT: unknown;
@@ -148,6 +149,7 @@ function buildTimeline(entries: readonly DashboardEntry[]): TimelineDatum[] {
 
 async function getLatestBroadcast(): Promise<LatestBroadcast | undefined> {
   const rows = await snowflakeQuery<BroadcastRow>(`SELECT
+      BROADCAST_ID,
       SCRIPT,
       DURATION_SECONDS,
       GENERATED_AT,
@@ -162,7 +164,9 @@ async function getLatestBroadcast(): Promise<LatestBroadcast | undefined> {
     title: "State of Passion",
     transcript: row.SCRIPT,
     durationSeconds: Number(row.DURATION_SECONDS ?? 0),
-    audioUrl: row.HAS_AUDIO ? "/api/audio/latest" : undefined,
+    audioUrl: row.HAS_AUDIO
+      ? `/api/audio/latest?id=${encodeURIComponent(row.BROADCAST_ID)}`
+      : undefined,
     generatedAt: toIsoString(row.GENERATED_AT),
   };
 }
@@ -171,15 +175,37 @@ export async function getLatestBroadcastAudio(): Promise<{
   bytes: Uint8Array;
   mime: string;
   generatedAt: string;
+} | null>;
+export async function getLatestBroadcastAudio(
+  broadcastId: string,
+): Promise<{
+  bytes: Uint8Array;
+  mime: string;
+  generatedAt: string;
+} | null>;
+export async function getLatestBroadcastAudio(
+  broadcastId?: string,
+): Promise<{
+  bytes: Uint8Array;
+  mime: string;
+  generatedAt: string;
 } | null> {
-  const rows = await snowflakeQuery<AudioRow>(`SELECT
-      AUDIO_BASE64,
-      AUDIO_MIME,
-      GENERATED_AT
-    FROM BROADCASTS
-    WHERE AUDIO_BASE64 IS NOT NULL
-    ORDER BY GENERATED_AT DESC
-    LIMIT 1`);
+  const rows = broadcastId
+    ? await snowflakeQuery<AudioRow>(
+        `SELECT AUDIO_BASE64, AUDIO_MIME, GENERATED_AT
+          FROM BROADCASTS
+          WHERE BROADCAST_ID = ? AND AUDIO_BASE64 IS NOT NULL
+          LIMIT 1`,
+        [broadcastId],
+      )
+    : await snowflakeQuery<AudioRow>(`SELECT
+        AUDIO_BASE64,
+        AUDIO_MIME,
+        GENERATED_AT
+      FROM BROADCASTS
+      WHERE AUDIO_BASE64 IS NOT NULL
+      ORDER BY GENERATED_AT DESC
+      LIMIT 1`);
   const row = rows[0];
   if (!row?.AUDIO_BASE64) return null;
 
