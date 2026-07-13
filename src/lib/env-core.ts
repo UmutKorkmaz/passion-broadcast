@@ -1,11 +1,14 @@
 import { z } from "zod";
 
-const commonSchema = z.object({
+const providerSchema = z.object({
   GOOGLE_AI_API_KEY: z.string().min(1),
   GEMINI_MODEL: z.string().default("gemini-3.5-flash"),
   ELEVENLABS_API_KEY: z.string().min(1),
   ELEVENLABS_VOICE_ID: z.string().min(1),
   ELEVENLABS_MODEL_ID: z.string().default("eleven_multilingual_v2"),
+});
+
+const ingestSecretsSchema = z.object({
   INGEST_SECRET: z.string().min(24),
   CRON_SECRET: z.string().min(24),
 });
@@ -30,11 +33,11 @@ const snowflakeSchema = z
     "Snowflake private key is required",
   );
 
-export type ProviderEnv = z.infer<typeof commonSchema>;
+export type ProviderEnv = z.infer<typeof providerSchema>;
 export type SnowflakeEnv = z.infer<typeof snowflakeSchema>;
 
 export function getProviderEnv(): ProviderEnv {
-  return commonSchema.parse(process.env);
+  return providerSchema.parse(process.env);
 }
 
 export function getSnowflakeEnv(): SnowflakeEnv {
@@ -42,10 +45,8 @@ export function getSnowflakeEnv(): SnowflakeEnv {
 }
 
 export function getIngestSecrets(): Pick<
-  ProviderEnv,
+  z.infer<typeof ingestSecretsSchema>,
   "INGEST_SECRET" | "CRON_SECRET"
 > {
-  return commonSchema
-    .pick({ INGEST_SECRET: true, CRON_SECRET: true })
-    .parse(process.env);
+  return ingestSecretsSchema.parse(process.env);
 }
