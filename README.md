@@ -119,9 +119,9 @@ npm run build
 
 ## Automated challenge refresh
 
-`.github/workflows/refresh-passion-broadcast.yml` calls the protected production ingestion route during the final challenge hours and once after the deadline. Each run checks the public DEV dataset and records a Snowflake snapshot. Gemini and ElevenLabs are invoked only when a qualifying post is new or edited; unchanged runs do not generate another broadcast. The workflow can also be started manually from GitHub Actions.
+`.github/workflows/refresh-passion-broadcast.yml` runs the ingestion pipeline during the final challenge hours and once after the deadline. Each run checks the public DEV dataset and records a Snowflake snapshot. Gemini and ElevenLabs are invoked only when a qualifying post is new or edited; unchanged runs do not generate another broadcast. The workflow can also be started manually from GitHub Actions.
 
-The workflow authenticates with the repository secret `PASSION_INGEST_SECRET`, which must match the production `CRON_SECRET`. Scheduled runs are intentionally limited to the 2026 challenge window so the judged dataset freezes after the final capture.
+Provider and Snowflake credentials are stored as encrypted GitHub Actions secrets. The pipeline runs on the GitHub runner rather than inside a Vercel request so a full refresh is not constrained by the serverless request timeout. Scheduled runs are intentionally limited to the 2026 challenge window so the judged dataset freezes after the final capture.
 
 ## Privacy and limitations
 

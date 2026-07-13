@@ -18,7 +18,20 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 25
+    env:
+      GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      ELEVENLABS_MODEL_ID: ${{ secrets.ELEVENLABS_MODEL_ID }}
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USERNAME: ${{ secrets.SNOWFLAKE_USERNAME }}
+      SNOWFLAKE_PRIVATE_KEY_B64: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_B64 }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
     steps:
       - name: Validate challenge schedule
         id: window
@@ -32,36 +45,21 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check out the challenge project
+        if: steps.window.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.window.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.window.outputs.run == 'true'
+        run: npm ci
+
       - name: Refresh entries and broadcast
         if: steps.window.outputs.run == 'true'
-        env:
-          INGEST_SECRET: ${{ secrets.PASSION_INGEST_SECRET }}
-        run: |
-          if [[ -z "$INGEST_SECRET" ]]; then
-            echo "PASSION_INGEST_SECRET is not configured." >&2
-            exit 1
-          fi
-
-          curl \
-            --fail-with-body \
-            --silent \
-            --show-error \
-            --retry 3 \
-            --retry-all-errors \
-            --connect-timeout 15 \
-            --max-time 330 \
-            --header "Authorization: Bearer $INGEST_SECRET" \
-            --output /tmp/passion-ingest.json \
-            https://dev-community-challange.vercel.app/api/admin/ingest
-
-          jq '{runId, status, sourceCount, qualifyingCount, changedCount, analyzedCount, failedAnalysisCount, broadcastGenerated, audioGenerated}' /tmp/passion-ingest.json
-
-          if ! jq -e '.status == "SUCCESS" or .status == "PARTIAL"' /tmp/passion-ingest.json >/dev/null; then
-            echo "Ingestion did not complete successfully." >&2
-            exit 1
-          fi
-
-          if jq -e '.changedCount > 0 and (.broadcastGenerated != true or .audioGenerated != true)' /tmp/passion-ingest.json >/dev/null; then
-            echo "New content was found, but its narrated broadcast was not completed." >&2
-            exit 1
-          fi
+        run: npm run ingest

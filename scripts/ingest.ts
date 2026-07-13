@@ -17,12 +17,22 @@ async function main() {
         analyzedCount: result.analyzedCount,
         failedAnalysisCount: result.failedAnalysisCount,
         broadcastGenerated: result.broadcastGenerated,
+        audioGenerated: result.audioGenerated,
         metrics: result.snapshot.metrics,
       },
       null,
       2,
     ),
   );
+
+  if (
+    result.changedCount > 0 &&
+    (!result.broadcastGenerated || !result.audioGenerated)
+  ) {
+    throw new Error(
+      "New content was found, but its narrated broadcast was not completed.",
+    );
+  }
 }
 
 main().catch((error) => {
