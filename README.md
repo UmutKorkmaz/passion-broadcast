@@ -7,7 +7,7 @@ Passion Broadcast is a live, source-backed view of the projects and motivations 
 It is an observatory, not a leaderboard. Every entry links back to its public DEV post, and the app does not score projects or predict winners.
 
 - Live demo: [dev-community-challange.vercel.app](https://dev-community-challange.vercel.app)
-- DEV submission: **[add published post URL]**
+- DEV submission: [Passion Broadcast: I Mapped What 230 DEV Builders Cared Enough to Build](https://dev.to/umutkorkmaz/passion-broadcast-i-mapped-what-230-dev-builders-cared-enough-to-build-3mg6)
 - Source: [github.com/UmutKorkmaz/passion-broadcast](https://github.com/UmutKorkmaz/passion-broadcast)
 
 **Status:** production deployment is live. The final challenge snapshot is refreshed from the public DEV dataset before the submission window closes.
@@ -115,7 +115,7 @@ npm run build
 3. Base64-encode the Snowflake private key into `SNOWFLAKE_PRIVATE_KEY_B64`; a local file path is not available in a Vercel function.
 4. Deploy only after the test, typecheck, lint, and production-build gates pass.
 5. Run ingestion from a trusted environment, then verify the dashboard timestamp, source links, and latest audio response on the deployed app.
-6. Replace the live-demo placeholder above and in the DEV submission draft.
+6. Verify the live demo and published DEV submission links above.
 
 ## Automated challenge refresh
 
@@ -139,4 +139,4 @@ Passion Broadcast turns the prompt back toward the community: instead of buildin
 - **Google AI** converts varied prose into constrained, evidence-bound structured data and a grounded bulletin script.
 - **ElevenLabs** turns the current field snapshot into an accessible, listenable community update.
 
-The full build plan and copy-ready submission draft are in [PROJECT_PLAN_AND_SUBMISSION.md](./PROJECT_PLAN_AND_SUBMISSION.md).
+The full build plan and original submission draft are in [PROJECT_PLAN_AND_SUBMISSION.md](./PROJECT_PLAN_AND_SUBMISSION.md).

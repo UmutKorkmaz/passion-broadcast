@@ -177,9 +177,9 @@ Run unit tests, typecheck, lint, production build, database and provider smoke t
 | Sponsor tech feels ornamental | Make Snowflake the read source, Gemini the analytical contract, and ElevenLabs the product's audio surface |
 | Private credentials leak | Keep all provider calls server-side, ignore local secrets, and rotate disposable keys after testing |
 
-## DEV submission draft
+## Original DEV submission draft
 
-Replace every square-bracket placeholder and verify all statements against the deployed build before publishing.
+This planning draft was superseded by the [published DEV submission](https://dev.to/umutkorkmaz/passion-broadcast-i-mapped-what-230-dev-builders-cared-enough-to-build-3mg6). It remains here to document how the final story evolved.
 
 ```markdown
 ---
