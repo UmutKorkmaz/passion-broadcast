@@ -26,7 +26,7 @@ export const entryAnalysisSchema = z.object({
   archetype: z.enum(PASSION_ARCHETYPES),
   domain: z.string().min(2).max(80),
   motivation: z.string().min(10).max(220),
-  emotionalTone: z.string().min(2).max(100),
+  emotionalTone: z.string().min(2).max(160),
   technologies: z.array(z.string().min(1).max(50)).max(12),
   sponsorTechnologies: z.array(z.enum(SPONSOR_TECHNOLOGIES)).max(4),
   groundedSummary: z.string().min(20).max(320),
@@ -79,7 +79,7 @@ ${JSON.stringify(compactArticle(entry), null, 2)}`,
 }
 
 const batchAnalysisItemSchema = entryAnalysisSchema.extend({
-  articleId: z.number().int().positive(),
+  articleId: z.number().int().min(1),
 });
 
 export type BatchEntryAnalysis = {
